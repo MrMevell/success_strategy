@@ -73,27 +73,23 @@ def skip_for_aver(n):
 # @n      - число билетов
 # @repeat - число повторов
 def modeling(n, repeat):
-
     print(f"{'n':<8}{'s(π)':<20}{'π(s, n)':<20}{'sim π':<20}{'Δπ':<20}"
           f"{'s(Mξ)':<20}{'Mξ(s, n)':<20}{'sim Mξ':<20}{'ΔMξ':<20}")
     print("=" * 160)
 
-    for ticket in range(1, n+1):
+    for ticket in range(1, n + 1):
         total_max = 0
         total_aver = 0
 
         # Оптимальные пробные серии
-        correct_max = skip_for_max(ticket)
-        correct_aver = skip_for_aver(ticket)
-
-        skip_max = skip_for_aver(ticket)
-        skip_aver = skip_for_max(ticket)
+        skip_max = skip_for_max(ticket)
+        skip_aver = skip_for_aver(ticket)
 
         # Оптимальные результаты
-        opt_max = round(probability_for_max(correct_max, ticket), 5)
-        opt_aver = round(average(correct_aver, ticket), 5)
+        opt_max = round(probability_for_max(skip_max, ticket), 5)
+        opt_aver = round(average(skip_aver, ticket), 5)
 
-        arr = list(range(1, ticket+1))
+        arr = list(range(1, ticket + 1))
         for _ in range(repeat):
             random.shuffle(arr)
 
@@ -101,8 +97,8 @@ def modeling(n, repeat):
             if skip_aver == 1:
                 total_aver += arr[0]
             else:
-                max_trial = max(arr[:skip_aver-1])
-                for value in arr[skip_aver-1:]:
+                max_trial = max(arr[:skip_aver - 1])
+                for value in arr[skip_aver - 1:]:
                     if value > max_trial:
                         total_aver += value
                         break
@@ -111,9 +107,9 @@ def modeling(n, repeat):
             if skip_max == 1:
                 max_trial = 0
             else:
-                max_trial = max(arr[:skip_max-1])
+                max_trial = max(arr[:skip_max - 1])
             first_max = None
-            for value in arr[skip_max-1:]:
+            for value in arr[skip_max - 1:]:
                 if value > max_trial:
                     first_max = value
                     break
@@ -128,12 +124,12 @@ def modeling(n, repeat):
         diff_max = round(abs(prob_max - opt_max), 5)
         diff_aver = round(abs(aver - opt_aver), 5)
 
-        print(f"{ticket:<8}{correct_max:<20}{opt_max:<20}{prob_max:<20}{diff_max:<20}"
-                f"{correct_aver:<20}{opt_aver:<20}{aver:<20}{diff_aver:<20}")
+        print(f"{ticket:<8}{skip_max:<20}{opt_max:<20}{prob_max:<20}{diff_max:<20}"
+              f"{skip_aver:<20}{opt_aver:<20}{aver:<20}{diff_aver:<20}")
 
 
 def table(n):
-    print(f"{'n':<8}{'s(π)':<20}{'π(s, n)':<20}"
+    print(f"\n{'n':<8}{'s(π)':<20}{'π(s, n)':<20}"
           f"{'s(Mξ)':<20}{'Mξ(s, n)':<20}")
     print("=" * 88)
 
