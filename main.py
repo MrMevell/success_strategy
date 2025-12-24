@@ -2,18 +2,10 @@ import random
 from functools import lru_cache
 
 
-# Вычисление факториалов до n включительно
-def factorial(n):
-    array = [1] * (n + 1)
-    for i in range(2, n + 1):
-        array[i] = i * array[i - 1]
-    return array
-
-
 @lru_cache
 # @skip - число пропущенных билетов
 # @n    - число билетов
-def probability_for_max(skip, n):
+def probability_for_max(skip, n): # Функция 1
     if skip == 1:    # если skip равен 1, то мы пропускаем
         return 1 / n # skip - 1 = 0 билетов
 
@@ -25,17 +17,25 @@ def probability_for_max(skip, n):
 
 @lru_cache
 # @n - число билетов
-def skip_for_max(n):
+def skip_for_max(n): # Функция 2
     for skip in range(1, n):
         if(skip / n) > probability_for_max(skip+1, n):
             return skip
     return 1 # возвращается, если при s > 1 не выполняется условие выше
 
 
+# Вычисление факториалов до n включительно
+def factorial(n): # Функция 3
+    array = [1] * (n + 1)
+    for i in range(2, n + 1):
+        array[i] = i * array[i - 1]
+    return array
+
+
 @lru_cache
 # @skip - число пропущенных билетов
 # @n    - число билетов
-def average(skip, n):
+def average(skip, n): # Функция 4
     factorials = factorial(n)
 
     if skip == 1:
@@ -56,7 +56,7 @@ def average(skip, n):
 
 @lru_cache
 # @n - число билетов
-def skip_for_aver(n):
+def skip_for_aver(n): # Функция 5
     last = 0
     current = average(1, n)
     for skip in range(1, n):
@@ -72,7 +72,7 @@ def skip_for_aver(n):
 
 # @n      - число билетов
 # @repeat - число повторов
-def modeling(n, repeat):
+def modeling(n, repeat): # Функция 6
     print(f"{'n':<8}{'s':<8}{'π(s, n)':<20}{'sim π':<20}{'Δπ':<20}"
           f"{'Mξ(s, n)':<20}{'sim Mξ':<20}{'ΔMξ':<20}")
     print("=" * 136)
@@ -147,4 +147,4 @@ def table(n):
 
 n = int(input("Введите количество билетов: "))
 modeling(n, 10**7)
-table(n)
+#table(n)
