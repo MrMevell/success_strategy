@@ -1,150 +1,92 @@
-import random
 from functools import lru_cache
+import math
+
+def probability_of_max(s, n):
+    if s == 1:
+        return 1.0 / n
+    harmonic_sum = sum(1.0 / k for k in range(s - 1, n))
+    return (s - 1) * harmonic_sum / n
 
 
-@lru_cache
-# @skip - число пропущенных билетов
-# @n    - число билетов
-def probability_for_max(skip, n): # Функция 1
-    if skip == 1:    # если skip равен 1, то мы пропускаем
-        return 1 / n # skip - 1 = 0 билетов
-
-    probability = 0
-    for k in range(skip - 1, n):
-        probability += 1 / k
-    return (skip - 1) / n * probability
-
-
-@lru_cache
-# @n - число билетов
-def skip_for_max(n): # Функция 2
-    for skip in range(1, n):
-        if(skip / n) > probability_for_max(skip+1, n):
-            return skip
-    return 1 # возвращается, если при s > 1 не выполняется условие выше
-
-
-# Вычисление факториалов до n включительно
-def factorial(n): # Функция 3
-    array = [1] * (n + 1)
-    for i in range(2, n + 1):
-        array[i] = i * array[i - 1]
-    return array
-
+def optimal_s_probability(n):
+    for s in range(1, n):
+        if (s / n) > probability_of_max(s + 1, n):
+            return s
+    return 1
 
 @lru_cache
-# @skip - число пропущенных билетов
-# @n    - число билетов
-def average(skip, n): # Функция 4
-    factorials = factorial(n)
+def average(s, n):
+    if s == 1:
+        return (n + 1) / 2.0
 
-    if skip == 1:
-        result = 0
-        for k in range(1, n + 1):
-            result += k
-        return result / n
+    result = 0.0
+    ln_n_fact = math.lgamma(n + 1)  # ln(n!)
 
-    result = 0
-    for k in range(skip, n+1):
-        current = 0
-        for i in range(skip-1, k):
-            current += (factorials[k-1] * (skip - 1) * factorials[n - i - 1]
-                        / (i * factorials[k - i - 1] * factorials[n]))
-        result += k * current
-    return result
+    for k in range(s, n + 1):
+        ln_k_fact = math.lgamma(k + 1)  # ln(k!)
+        current = 0.0
+        for i in range(s, k + 1):
+            # Считаем члены через логарифмы, чтобы избежать переполнения float при n >= 171
+            ln_term = (ln_k_fact + math.lgamma(n - i + 1)
+                       - ln_n_fact - math.lgamma(k - i + 1)
+                       - math.log(i - 1))
+            current += math.exp(ln_term)
+        result += current
+
+    return (s - 1) * result
 
 
-@lru_cache
-# @n - число билетов
-def skip_for_aver(n): # Функция 5
-    last = 0
-    current = average(1, n)
-    for skip in range(1, n):
-        next = average(skip + 1, n)
-
-        if current > last and current > next:
-            return skip
-
-        last = current
-        current = next
+def optimal_s_average(n):
+    if average(1, n) >= average(2, n):
+        return 1
+    if average(n, n) >= average(n - 1, n):
+        return n
+    for s in range(2, n):
+        val = average(s, n)
+        if val > average(s - 1, n) and val >= average(s + 1, n):
+            return s
     return 1
 
 
-# @n      - число билетов
-# @repeat - число повторов
-def modeling(n, repeat): # Функция 6
-    print(f"{'n':<8}{'s':<8}{'π(s, n)':<20}{'sim π':<20}{'Δπ':<20}"
-          f"{'Mξ(s, n)':<20}{'sim Mξ':<20}{'ΔMξ':<20}")
-    print("=" * 136)
-
-    for ticket in range(1, n + 1):
-        total_max = 0
-        total_aver = 0
-
-        skip = skip_for_max(ticket) # skip_for_aver(ticket)
-
-        # Оптимальные пробные серии
-        opt_skip_max = skip_for_max(ticket)
-        opt_skip_aver = skip_for_aver(ticket)
-
-        # Оптимальные результаты
-        opt_max = round(probability_for_max(opt_skip_max, ticket), 5)
-        opt_aver = round(average(opt_skip_aver, ticket), 5)
-
-        arr = list(range(1, ticket + 1))
-        for _ in range(repeat):
-            random.shuffle(arr)
-
-            # Средний выигрыш
-            if skip == 1:
-                total_aver += arr[0]
-            else:
-                max_trial = max(arr[:skip - 1])
-                for value in arr[skip - 1:]:
-                    if value > max_trial:
-                        total_aver += value
-                        break
-
-            # Максимальный выигрыш
-            if skip == 1:
-                max_trial = 0
-            else:
-                max_trial = max(arr[:skip - 1])
-            first_max = None
-            for value in arr[skip - 1:]:
-                if value > max_trial:
-                    first_max = value
-                    break
-            if first_max == max(arr):
-                total_max += 1
-
-        # Результаты
-        prob_max = round(total_max / repeat, 5)
-        aver = round(total_aver / repeat, 5)
-
-        # Разница
-        diff_max = round(abs(prob_max - opt_max), 5)
-        diff_aver = round(abs(aver - opt_aver), 5)
-
-        print(f"{ticket:<8}{skip:<8}{opt_max:<20}{prob_max:<20}{diff_max:<20}"
-              f"{opt_aver:<20}{aver:<20}{diff_aver:<20}")
+def solve_inequality(n, c):
+    s_min, s_max = None, None
+    for s in range(1, n + 1):
+        if average(s, n) >= c:
+            s_min = s
+            break
+    for s in range(n, 0, -1):
+        if average(s, n) >= c:
+            s_max = s
+            break
+    return s_min, s_max
 
 
-def table(n):
-    print(f"\n{'n':<8}{'s(π)':<20}{'π(s, n)':<20}"
-          f"{'s(Mξ)':<20}{'Mξ(s, n)':<20}")
-    print("=" * 88)
-
-    for ticket in range(1, n + 1):
-        skip_max = skip_for_max(ticket)
-        skip_aver = skip_for_aver(ticket)
-
-        prob_max = probability_for_max(skip_max, ticket)
-        aver = average(skip_aver, ticket)
-
-        print(f"{ticket:<8}{skip_max:<20}{round(prob_max, 10):<20}{skip_aver:<20}{round(aver, 10):<20}")
+def optimal_s_constrained(n, c):
+    s_star = optimal_s_probability(n)
+    s_min, s_max = solve_inequality(n, c)
+    if s_min is None:
+        return None
+    if s_star < s_min:
+        return s_min
+    elif s_star > s_max:
+        return s_max
+    else:
+        return s_star
 
 
 n = int(input("Введите количество билетов: "))
-modeling(n, 10**7)
-#table(n)
+
+print(f"Оптимальное s для вероятности: {optimal_s_probability(n)}")
+print(f"Оптимальное s для матожидания: {optimal_s_average(n)}")
+
+c = float(input("Введите ограничение c: "))
+s_prime, s_double_prime = solve_inequality(n, c)
+
+if s_prime is not None:
+    print(f"Допустимый интервал A: [{s_prime}, {s_double_prime}]")
+    s_tilde = optimal_s_constrained(n, c)
+    print(f"Компромиссное s~: {s_tilde}")
+    print(f"Итоговая вероятность pi({s_tilde}, {n}): {probability_of_max(s_tilde, n):.4f}")
+    print(f"Итоговое матожидание M[xi({s_tilde})]: {average(s_tilde, n):.4f}")
+else:
+    print("Допустимых решений нет (C слишком велико)")
